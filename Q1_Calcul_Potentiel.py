@@ -1,60 +1,92 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Paramètres de la grille
-Nx, Ny = 100, 100  # Taille de la grille (100x100)
-V = np.zeros((Nx, Ny))  # Matrice initiale du potentiel (0V partout)
+# ======================================
+# Paramètres géométriques (en mm, convertis en pixels)
+# ======================================
+scale = 10  # 1 mm = 10 pixels
 
-# Définition des dynodes (positions et potentiels)
+a = 3 * scale     # Espace entre dynodes et extrémités
+b = 2 * scale     # Espace entre dynodes et parois latérales
+c = 4 * scale     # Longueur des dynodes
+d = 2 * scale     # Distance entre dynodes
+e = int(0.2 * scale)  # Épaisseur d'une dynode
+f = 6 * scale     # Largeur du tube
+N = 4             # Nombre de dynodes
+
+# Taille de la grille
+Nx = f
+Ny = a * 2 + d * (N - 1) + e * N  # Hauteur : dynodes + espacements
+V = np.zeros((Ny, Nx))  # Matrice du potentiel
+
+# ======================================
+# Définir les conditions initiales
+# ======================================
 def init_conditions(V):
-    V[:, 0] = 0  # Bord gauche (enceinte)
-    V[:, -1] = 0  # Bord droit (enceinte)
-    V[0, :] = 0  # Bord haut (enceinte)
-    V[-1, :] = 0  # Bord bas (enceinte)
+    # Bords de l'enceinte à 0 V
+    V[:, 0] = V[:, -1] = V[0, :] = V[-1, :] = 0
 
-    # Position des dynodes et potentiels
-    dynodes_y = [20, 40, 60, 80]  # Positions sur l'axe y
-    for i, y in enumerate(dynodes_y):
-        V[y, 10:90] = 100 * (i + 1)  # Dynodes avec potentiels 100V, 200V, ...
+    # Dynodes du bas
+    for i in range(N):
+        y = a + i * (d + e)
+        V[y:y+e, b:b+c] = 100 * (i + 1)
+
+    # Dynodes du haut (décalées horizontalement)
+    for i in range(N):
+        y = Ny - (a + i * (d + e) + e)
+        V[y:y+e, b + c//2 : b + c + c//2] = 100 * (i + 1)
 
     return V
 
+# ======================================
 # Méthode de relaxation
-def relaxation(V, tol=1e-5, max_iter=10000):
+# ======================================
+def relaxation(V, tol=1e-3, max_iter=10000):
     diff = tol + 1
     iterations = 0
 
     while diff > tol and iterations < max_iter:
         V_old = V.copy()
-        V[1:-1, 1:-1] = 0.25 * (V[:-2, 1:-1] + V[2:, 1:-1] + V[1:-1, :-2] + V[1:-1, 2:])
-        
-        # Vérification du critère d'arrêt
+
+        # Appliquer la méthode de relaxation
+        V[1:-1, 1:-1] = 0.25 * (
+            V[2:, 1:-1] + V[:-2, 1:-1] + V[1:-1, 2:] + V[1:-1, :-2]
+        )
+
+        # Réappliquer les conditions aux dynodes
+        V = init_conditions(V)
+
+        # Critère d'arrêt basé sur le changement maximal
         diff = np.max(np.abs(V - V_old))
         iterations += 1
 
-    print(f"Convergence atteinte en {iterations} itérations.")
+    print(f"Convergence atteinte en {iterations} itérations (diff = {diff:.2e})")
     return V
 
-# Affichage du potentiel
+# ======================================
+# Affichage et sauvegarde de la figure
+# ======================================
 def plot_potential(V):
     plt.figure(figsize=(8, 6))
-    plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx, 0, Ny])
+    plt.imshow(V, cmap="inferno", origin="lower",
+               extent=[0, Nx/scale, 0, Ny/scale])
     plt.colorbar(label="Potentiel (V)")
     plt.title("Potentiel dans le tube PM")
     plt.xlabel("x (mm)")
     plt.ylabel("y (mm)")
+    plt.savefig("figures_dos/potentiel_PM.png")
     plt.show()
 
-# Exécution du programme
+# ======================================
+# Exécution principale
+# ======================================
 def main():
     print("Initialisation de la grille...")
-    
-    # Définition initiale de V avant de l’envoyer à init_conditions
-    Nx, Ny = 100, 100  # Dimensions de la grille
-    V = np.zeros((Nx, Ny))  # Initialisation du potentiel à 0V partout
 
-    V = init_conditions(V)  # Maintenant V est bien défini avant d'être utilisé
-    V = relaxation(V)  # Application de la méthode de relaxation
+    V = np.zeros((Ny, Nx))  # Potentiel initial
+    V = init_conditions(V)
+    V = relaxation(V)       # Appliquer la méthode de relaxation
+    plot_potential(V)       # Afficher et sauvegarder la figure
 
-    plot_potential(V)  # Affichage du potentiel
-
+if __name__ == "__main__":
+    main()
