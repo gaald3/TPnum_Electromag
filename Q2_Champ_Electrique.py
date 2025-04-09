@@ -4,30 +4,31 @@ from Q1_Calcul_Potentiel import relaxation, init_conditions, scale, Nx, Ny
 
 
 def calcul_champ_electrique(V):
-    # Calcul du champ E = -grad(V)
-    Ey, Ex = np.gradient(-V)  # Attention : gradient retourne d'abord l'axe y, ensuite x
+    # Calcul du champ électrique E = -grad(V)
+    Ey, Ex = np.gradient(-V)  # Gradient retourne d'abord l'axe y puis x
     return Ex, Ey
 
 
 def plot_champ_electrique(V, Ex, Ey):
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 10))
 
     # Affichage du potentiel en fond
-    plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx, 0, Ny])
+    plt.imshow(V, cmap="inferno", origin="lower",
+               extent=[0, Nx / scale, 0, Ny / scale])
     plt.colorbar(label="Potentiel (V)")
 
-    # Création d'une grille de points plus espacés pour les flèches
+    # Grille pour champ électrique (moins dense pour lisibilité)
     step = 5
     x = np.arange(0, Nx, step)
     y = np.arange(0, Ny, step)
     X, Y = np.meshgrid(x, y)
-    
-    # Champ électrique échantillonné sur la grille
+
     Ex_sample = Ex[::step, ::step]
     Ey_sample = Ey[::step, ::step]
 
-    # Superposition du champ vectoriel
-    plt.quiver(X, Y, Ex_sample, Ey_sample, color="cyan", scale=100, width=0.003)
+    # Superposition du champ électrique (quiver)
+    plt.quiver(X / scale, Y / scale, Ex_sample, Ey_sample,
+               color="cyan", scale=100, width=0.003)
 
     plt.title("Champ électrique dans le tube PM")
     plt.xlabel("x (mm)")
@@ -48,3 +49,7 @@ def main():
 
     print("Affichage du champ électrique...")
     plot_champ_electrique(V, Ex, Ey)
+
+
+if __name__ == "__main__":
+    main()
