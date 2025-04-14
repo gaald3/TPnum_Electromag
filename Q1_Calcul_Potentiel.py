@@ -4,36 +4,39 @@ import matplotlib.pyplot as plt
 # ===============================
 # Paramètres géométriques (mm)
 # ===============================
-scale = 10  # 1 mm = 10 cases (pixels)
-a = 3 * scale  # Espace dynode-extrémité
-b = 2 * scale  # Espace dynode-paroi
-c = 4 * scale  # Longueur dynode
-d = 2 * scale  # Distance entre dynodes
+scale = 10  # 1 mm = 10 cases
+a = 3 * scale   # Espace dynode-extrémité
+b = 2 * scale   # Espace dynode-paroi
+c = 4 * scale   # Longueur dynode
+d = 2 * scale   # Distance entre dynodes du même côté
 e = int(0.2 * scale)  # Épaisseur dynode
-f = 6 * scale  # Hauteur totale du tube
-N = 4  # Nombre de dynodes
+f = 6 * scale   # Hauteur du tube
+N = 4  # Nombre total de dynodes (2 en haut, 2 en bas)
 
 # ===============================
 # Grille : x = longueur, y = hauteur
 # ===============================
-Nx = a * 2 + (c + d) * (N - 1) + c  # Largeur du tube
-Ny = f  # Hauteur fixe du tube
+Nx = int(a * 2 + 2 * c + d + 0.5 * (c + d))  # Largeur totale = 19 mm = 190 cases
+Ny = f  # Hauteur du tube
 V = np.zeros((Ny, Nx))  # Grille du potentiel
 
 # ===============================
-# Conditions initiales
+# Conditions initiales (géométrie)
 # ===============================
 def init_conditions(V):
-    V[:, 0] = V[:, -1] = V[0, :] = V[-1, :] = 0  # Bords à 0 V
+    # Bords du tube à 0 V
+    V[:, 0] = V[:, -1] = V[0, :] = V[-1, :] = 0
 
-    for i in range(N):
-        x = a + i * (c + d)
-        if i % 2 == 0:
-            # Dynode en bas
-            V[b:b+e, x:x+c] = 100 * (i + 1)
-        else:
-            # Dynode en haut
-            V[-(b+e):-b, x:x+c] = 100 * (i + 1)
+    # Dynodes du bas (indices 0 et 1)
+    for i in range(N // 2):
+        x = int(a + i * (c + d))
+        V[b:b+e, x:x+c] = 100 * (2 * i + 1)
+
+    # Dynodes du haut (indices 2 et 3), décalées en x
+    for i in range(N // 2):
+        x = int(a + (i + 0.5) * (c + d))
+        V[-(b+e):-b, x:x+c] = 100 * (2 * i + 2)
+
     return V
 
 # ===============================
@@ -46,7 +49,8 @@ def relaxation(V, tol=1e-3, max_iter=10000):
     while diff > tol and iterations < max_iter:
         V_old = V.copy()
         V[1:-1, 1:-1] = 0.25 * (
-            V[2:, 1:-1] + V[:-2, 1:-1] + V[1:-1, 2:] + V[1:-1, :-2]
+            V[2:, 1:-1] + V[:-2, 1:-1] +
+            V[1:-1, 2:] + V[1:-1, :-2]
         )
         V = init_conditions(V)
         diff = np.max(np.abs(V - V_old))
@@ -56,7 +60,7 @@ def relaxation(V, tol=1e-3, max_iter=10000):
     return V
 
 # ===============================
-# Visualisation
+# Affichage du potentiel
 # ===============================
 def plot_potential(V):
     plt.figure(figsize=(10, 4))
