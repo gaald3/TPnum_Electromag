@@ -2,25 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Q1_Calcul_Potentiel import relaxation, init_conditions, scale, Nx, Ny
 
-# ===================================
-# Calcul du champ électrique
-# ===================================
+
 def calcul_champ_electrique(V):
-    Ey, Ex = np.gradient(-V)  # Gradient retourne d'abord axe y puis x
+    # Calcul du champ électrique E = -grad(V)
+    Ey, Ex = np.gradient(-V)  # Gradient retourne d'abord l'axe y puis x
     return Ex, Ey
 
-# ===================================
-# Affichage du champ + potentiel
-# ===================================
-def plot_champ_electrique(V, Ex, Ey):
-    plt.figure(figsize=(10, 4))
 
-    # Affichage du potentiel
+def plot_champ_electrique(V, Ex, Ey):
+    plt.figure(figsize=(10, 5))
+
+    # Affichage du potentiel en fond
     plt.imshow(V, cmap="inferno", origin="lower",
                extent=[0, Nx / scale, 0, Ny / scale])
     plt.colorbar(label="Potentiel (V)")
 
-    # Grille échantillonnée pour le champ (quiver)
+    # Grille moins dense pour affichage des flèches
     step = 5
     x = np.arange(0, Nx, step)
     y = np.arange(0, Ny, step)
@@ -29,9 +26,13 @@ def plot_champ_electrique(V, Ex, Ey):
     Ex_sample = Ex[::step, ::step]
     Ey_sample = Ey[::step, ::step]
 
-    # Affichage du champ
+    # Norme du champ pour la couleur des flèches
+    magnitude = np.sqrt(Ex_sample**2 + Ey_sample**2)
+
+    # Affichage du champ électrique : flèches direction + norme
     plt.quiver(X / scale, Y / scale, Ex_sample, Ey_sample,
-               color="cyan", scale=100, width=0.003)
+               magnitude, cmap="viridis", scale=None, width=0.003)
+
 
     plt.title("Champ électrique dans le tube PM")
     plt.xlabel("x (mm)")
@@ -40,9 +41,7 @@ def plot_champ_electrique(V, Ex, Ey):
     plt.savefig("figures_dos/champ_PM.png")
     plt.show()
 
-# ===================================
-# Lancement
-# ===================================
+
 def main():
     print("Calcul du potentiel pour la question 2...")
     V = np.zeros((Ny, Nx))
@@ -54,6 +53,7 @@ def main():
 
     print("Affichage du champ électrique...")
     plot_champ_electrique(V, Ex, Ey)
+
 
 if __name__ == "__main__":
     main()
