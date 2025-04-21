@@ -1,82 +1,88 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import RegularGridInterpolator
+from Q1_Calcul_Potentiel import relaxation, init_conditions, scale, Nx, Ny
 from Q2_Champ_Electrique import calcul_champ_electrique
-from Q1_Calcul_Potentiel import relaxation, init_conditions
 
 # Constantes physiques
-e = -1.602e-19  # Charge de l'electron (C)
-m = 9.109e-31   # Masse de l'electron (kg)
+e = -1.602e-19  # charge de l'électron (C)
+m = 9.109e-31   # masse de l'électron (kg)
 
-def trajectoire_electron(V, dt=1e-11, steps=1000, x0=30, y0=10, vx0=0, vy0=0):
-    """
-    Simule la trajectoire d'un électron dans le tube PM avec la méthode d'Euler.
-    - V : matrice du potentiel
-    - dt : pas de temps (s)
-    - steps : nombre de pas
-    - x0, y0 : position initiale (en pixels)
-    - vx0, vy0 : vitesse initiale (m/s)
-    """
-    Ny, Nx = V.shape
+# Paramètres de simulation
+duree_totale = 1.3e-7
+dt = 3e-11  # Pas de temps (s)
+nb_steps = int(duree_totale / dt)  # Nombre de pas de temps
 
-    # Calcul du champ E = -grad(V)
-    Ex, Ey = calcul_champ_electrique(V)
-    
-    # Interpolation pour obtenir E(x, y) n'importe où
-    interp_Ex = RectBivariateSpline(np.arange(Ny), np.arange(Nx), Ex)
-    interp_Ey = RectBivariateSpline(np.arange(Ny), np.arange(Nx), Ey)
+# Conditions initiales (en mm)
+x0_mm, y0_mm = 0.0, 3.0  # position initiale
+vx0, vy0 = 0.0, 0.0      # vitesse initiale (mm/s)
 
-    # Position et vitesse initiales
-    pos = np.array([x0, y0], dtype=float)
-    vel = np.array([vx0, vy0], dtype=float)
+# Conversion en pixels
+x0 = x0_mm * scale
+y0 = y0_mm * scale
 
-    traj = [pos.copy()]
+# Préparer le potentiel et le champ
+V = np.zeros((Ny, Nx))
+V = init_conditions(V)
+V = relaxation(V, tol=1e-3)
+Ex, Ey = calcul_champ_electrique(V)
 
-    for _ in range(steps):
-        x, y = pos
+# Création d'interpolateurs pour le champ
+x = np.arange(Nx)
+y = np.arange(Ny)
+interp_Ex = RegularGridInterpolator((y, x), Ex)
+interp_Ey = RegularGridInterpolator((y, x), Ey)
 
-        # S'arrête si l'électron sort de l'enceinte
-        if x < 1 or x >= Nx-1 or y < 1 or y >= Ny-1:
-            break
+# Initialisation des trajectoires
+positions = [(x0, y0)]
+vitesses = [(vx0, vy0)]
 
-        # Champ E au point actuel (attention : y, x pour les matrices)
-        E = np.array([
-            interp_Ex(y, x)[0][0],
-            interp_Ey(y, x)[0][0]
-        ])
+# Potentiels des dynodes
+dynode_potentiels = [100, 200, 300, 400]
+rebound_margin = 1  # tolérance autour du potentiel (V)
 
-        # a = qE/m
-        a = (e * E) / m
+# Simulation avec rebond sur dynodes
+x, y = x0, y0
+vx, vy = vx0, vy0
+for step in range(nb_steps):
+    if not (0 <= x < Nx and 0 <= y < Ny):
+        break  # L'électron sort du domaine
 
-        # Méthode d'Euler
-        vel += a * dt
-        pos += vel * dt
+    # Champ local
+    E = np.array([interp_Ex((y, x)), interp_Ey((y, x))])
+    ax = (e / m) * E[0] * scale * 1e3  # en mm/s²
+    ay = (e / m) * E[1] * scale * 1e3
 
-        traj.append(pos.copy())
+    # Intégration d'Euler
+    vx += ax * dt
+    vy += ay * dt
+    x += vx * dt
+    y += vy * dt
 
-    return np.array(traj)
+    # Vérification d'impact sur dynode (rebond)
+    local_V = V[int(round(y)), int(round(x))]
+    if any(abs(local_V - vp) <= rebound_margin for vp in dynode_potentiels):
+        vy = -vy  # rebond vertical
 
-def main():
-    # Générer le potentiel V
-    Nx = 60
-    Ny = 100
-    V_init = np.zeros((Ny, Nx))
-    V = init_conditions(V_init)
-    V = relaxation(V, tol=1e-3)
+    positions.append((x, y))
+    vitesses.append((vx, vy))
 
-    # Lancer la simulation
-    traj = trajectoire_electron(V, dt=1e-11, steps=1500, x0=30, y0=5)
+# Conversion en mm pour affichage
+positions = np.array(positions) / scale
 
-    # Affichage
-    plt.figure(figsize=(6, 8))
-    plt.imshow(V, cmap="inferno", origin="lower")
-    plt.plot(traj[:, 0], traj[:, 1], color="cyan")
-    plt.title("Trajectoire de l'électron dans le tube PM")
-    plt.xlabel("x (pixels)")
-    plt.ylabel("y (pixels)")
-    plt.colorbar(label="Potentiel (V)")
-    plt.savefig("figures_dos/trajectoire_electron.png")
-    plt.show()
-
-if __name__ == "__main__":
-    main()
+# Affichage sur l'image du potentiel
+plt.figure(figsize=(10, 5))
+plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx / scale, 0, Ny / scale])
+plt.colorbar(label="Potentiel (V)")
+plt.plot(positions[:, 0], positions[:, 1], color="cyan", lw=1.5, label="Trajectoire de l'électron")
+plt.scatter([x0_mm], [y0_mm], color="cyan", label="Départ", zorder=5)
+plt.title("Trajectoire de l'électron dans le tube PM")
+plt.xlabel("x (mm)")
+plt.ylabel("y (mm)")
+plt.legend()
+plt.tight_layout()
+plt.savefig("figures_dos/trajectoire_electron.png")
+plt.show()
