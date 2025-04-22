@@ -6,8 +6,8 @@ import Q1_Calcul_Potentiel as q1
 import Q2_Champ_Electrique as q2
 import Q3_dossier.Q3_a as q3a
 import Q3_dossier.Q3_b as q3b
-import Q3_dossier.Q3_c as q3c
-import Q3_dossier.Q3_d as q3d
+import Q3_dossier.Q1_pour3c as q3c
+import Q3_dossier.Q3_c as q3d
 
 def main():
     print("\n=== EXÉCUTION DU TP D'ÉLECTROMAGNÉTISME ===\n")
