@@ -59,22 +59,18 @@ def relaxation(V, tol=1e-3, max_iter=10000):
     print(f"Convergence atteinte en {iterations} itérations (diff = {diff:.2e})")
     return V
 
-# ===============================
 # Affichage du potentiel
-# ===============================
 def plot_potential(V):
     plt.figure(figsize=(10, 4))
     plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx/scale, 0, Ny/scale])
     plt.colorbar(label="Potentiel (V)")
-    plt.title("Potentiel dans le tube PM")
+    plt.title("Potentiel dans le tube photomultiplicateur")
     plt.xlabel("x (mm)")
     plt.ylabel("y (mm)")
     plt.savefig("figures_dos/potentiel_PM.png")
     plt.show()
 
-# ===============================
 # Exécution principale
-# ===============================
 def main():
     print("Initialisation de la géométrie du tube PM...")
     V = np.zeros((Ny, Nx))
@@ -82,9 +78,6 @@ def main():
     V = relaxation(V)
     plot_potential(V)
 
-# ===============================
-# Lancement
-# ===============================
 if __name__ == "__main__":
     main()
 

@@ -95,7 +95,7 @@ def plot_champ_electrique(V, Ex, Ey):
     cbar_right = fig.colorbar(Q, ax=ax, orientation='vertical', fraction=0.046, pad=0.08)
     cbar_right.set_label('|E| (V/mm)')
 
-    ax.set_title("Champ électrique dans le tube PM")
+    ax.set_title("Champ électrique dans le tube photomultiplicateur")
     ax.set_xlabel("x (mm)")
     ax.set_ylabel("y (mm)")
     plt.tight_layout()
