@@ -62,9 +62,10 @@ for step in range(nb_steps):
     x += vx * dt
     y += vy * dt
 
-    x = min(max(x, 0), Nx - 1)
-    y = min(max(y, 0), Ny - 1)
-
+    # Vérification d'impact sur dynode (rebond)
+    local_V = V[int(round(y)), int(round(x))]
+    if any(abs(local_V - vp) <= rebound_margin for vp in dynode_potentiels):
+        vy = -vy  # rebond vertical
 
     positions.append((x, y))
     vitesses.append((vx, vy))
@@ -83,5 +84,5 @@ plt.xlabel("x (mm)")
 plt.ylabel("y (mm)")
 plt.legend()
 plt.tight_layout()
-plt.savefig("figures_dos/trajectoire_electron_b_libre.png")
+plt.savefig("figures_dos/trajectoire_electron_b_rebond.png")
 plt.show()

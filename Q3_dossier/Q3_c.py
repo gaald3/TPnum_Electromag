@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import RegularGridInterpolator
 from Q1_pour3c import relaxation, init_conditions, scale, Nx, Ny, a, b, c, d, e, f
-from Q2_pour3c import calcul_champ_electrique
+from Q2_Champ_Electrique import calcul_champ_electrique
 
 
 # Constantes physiques
@@ -17,7 +17,7 @@ m = 9.109e-31
 
 # Simulation
 dt = 3e-11
-duree_totale = 3e-7
+duree_totale = 1.7e-7
 nb_steps = int(duree_totale / dt)
 
 
@@ -145,7 +145,7 @@ plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx/scale, 0, Ny/scale])
 plt.colorbar(label="Potentiel (V)")
 plt.plot(positions[:, 0], positions[:, 1], color="cyan", lw=1.5, label="Trajectoire")
 plt.scatter([x0_mm], [y0_mm], color="cyan", label="Départ", zorder=5)
-plt.title("Trajectoire de l’électron (bas → haut → bas → haut)")
+plt.title("Trajectoire de l’électron")
 plt.xlabel("x (mm)")
 plt.ylabel("y (mm)")
 plt.legend()

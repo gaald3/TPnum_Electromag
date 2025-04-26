@@ -18,13 +18,13 @@ b = 2 * scale   # Espace dynode-paroi
 c = 8 * scale   # Longueur dynode
 d = 6.8 * scale   # Distance entre dynodes du même côté
 e = int(0.4 * scale)  # Épaisseur dynode (en y)
-N = 4  # Nombre total de dynodes (2 en haut, 2 en bas)
+N = 12  # Nombre total de dynodes (2 en haut, 2 en bas)
 
 
 # ===============================
 # Grille : x = longueur, y = hauteur
 # ===============================
-Nx = int(a * 2 + 2 * c + d + 0.5 * (c + d))  # Largeur suffisante
+Nx = int(a * 2 + N/2 * c + (N/2) * d)  # Largeur suffisante
 Ny = f  # Hauteur du tube
 V = np.zeros((Ny, Nx))  # Grille du potentiel
 
@@ -43,7 +43,7 @@ def init_conditions(V):
        x_max = x_min + c
        y_min = int(f / 2 - 2 * scale - e / 2)
        y_max = y_min + e
-       V[y_min:y_max, x_min:x_max] = 100 * (2 * i + 1)
+       V[int(y_min):int(y_max), int(x_min):int(x_max)] = 100 * (2 * i + 1)
 
 
    # Dynodes du haut (rebond vers le bas)
@@ -52,7 +52,7 @@ def init_conditions(V):
        x_max = x_min + c
        y_min = int(f / 2 + 2 * scale - e / 2)
        y_max = y_min + e
-       V[y_min:y_max, x_min:x_max] = 100 * (2 * i + 2)
+       V[int(y_min):int(y_max), int(x_min):int(x_max)] = 100 * (2 * i + 2)
 
 
    return V
@@ -88,7 +88,7 @@ def plot_potential(V):
    plt.figure(figsize=(10, 4))
    plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx/scale, 0, Ny/scale])
    plt.colorbar(label="Potentiel (V)")
-   plt.title("Potentiel dans le tube PM (ajusté_c)")
+   plt.title("Potentiel dans le tube PM (ajusté_d)")
    plt.xlabel("x (mm)")
    plt.ylabel("y (mm)")
    plt.savefig("figures_dos/potentiel_PM.png")

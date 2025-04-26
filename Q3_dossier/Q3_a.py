@@ -72,17 +72,3 @@ for step in range(nb_steps):
 
 # Conversion en mm pour affichage
 positions = np.array(positions) / scale
-
-# Affichage sur l'image du potentiel
-plt.figure(figsize=(10, 5))
-plt.imshow(V, cmap="inferno", origin="lower", extent=[0, Nx / scale, 0, Ny / scale])
-plt.colorbar(label="Potentiel (V)")
-plt.plot(positions[:, 0], positions[:, 1], color="cyan", lw=1.5, label="Trajectoire de l'électron")
-plt.scatter([x0_mm], [y0_mm], color="cyan", label="Départ", zorder=5)
-plt.title("Trajectoire de l'électron dans le tube PM")
-plt.xlabel("x (mm)")
-plt.ylabel("y (mm)")
-plt.legend()
-plt.tight_layout()
-plt.savefig("figures_dos/trajectoire_electron.png")
-plt.show()
